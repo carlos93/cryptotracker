@@ -1,6 +1,8 @@
 import time
 import requests
 
+MAX_COINS = 3
+
 def parseFloat(num):
     return "{0:.4f}".format(num)
 
@@ -19,41 +21,23 @@ while True:
     minIdx = 0
     maxIdx = 0
     file = open("data.txt", "a")
-    btc = float(getPriceFromGDAX("BTC-EUR"))
-    eth = float(getPriceFromGDAX("ETH-EUR"))
-    ltc = float(getPriceFromGDAX("LTC-EUR"))
+    coins = [0, 0, 0]
+    coins[0] = float(getPriceFromGDAX("BTC-EUR"))
+    coins[1] = float(getPriceFromGDAX("ETH-EUR"))
+    coins[2] = float(getPriceFromGDAX("LTC-EUR"))
 
-    if btc < min[0]:
-        min[0] = btc
-        isMin = True
-        minIdx |= 1
-        
-    if eth < min[1]:
-        min[1] = eth
-        isMin = True
-        minIdx |= 2
-        
-    if ltc < min[2]:
-        min[2] = ltc
-        isMin = True
-        minIdx |= 4
+    for i in range(MAX_COINS):
+        if coins[i] < min[i]:
+            min[i] = coins[i]
+            isMin = True
+            minIdx |= 1 << i
+            
+        if coins[i] > max[i]:
+            max[i] = coins[i]
+            isMax = True
+            maxIdx |= 1 << i
 
-    if btc > max[0]:
-        max[0] = btc
-        isMax = True
-        maxIdx |= 1
-        
-    if eth > max[1]:
-        max[1] = eth
-        isMax = True
-        maxIdx |= 2
-        
-    if ltc > max[2]:
-        max[2] = ltc
-        isMax = True
-        maxIdx |= 4
-
-    line = parseFloat(btc) + " " + parseFloat(eth) + " " + parseFloat(ltc)
+    line = "BTC: " + parseFloat(coins[0]) + ", ETH: " + parseFloat(coins[1]) + ", LTC: " + parseFloat(coins[2])
     extra = ""
     print(line, end="")
     if isMax:
@@ -61,7 +45,7 @@ while True:
     if isMin:
         extra += " MIN " + str(minIdx)
     print(extra)
-    file.write(line + "\n")
+    file.write(str(parseFloat(coins[0]) + " " + parseFloat(coins[1]) + " " + parseFloat(coins[2])) + "\n")
     file.close()
     time.sleep(5)
 
