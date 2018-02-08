@@ -1,7 +1,7 @@
 import time
 import requests
 
-MAX_COINS = 3
+MAX_COINS = 4
 
 def parseFloat(num):
     return "{0:.4f}".format(num)
@@ -13,18 +13,19 @@ def getPriceFromGDAX(coin):
     value = (float(json["bids"][0][0]) + float(json["asks"][0][0])) / 2.0
     return value
 
-min = [99999999, 99999999, 99999999]
-max = [0, 0, 0]
+min = [99999999, 99999999, 99999999, 99999999]
+max = [0, 0, 0, 0]
 while True:
     isMin = False
     isMax = False
     minIdx = 0
     maxIdx = 0
     file = open("data.txt", "a")
-    coins = [0, 0, 0]
+    coins = [0, 0, 0, 0]
     coins[0] = float(getPriceFromGDAX("BTC-EUR"))
     coins[1] = float(getPriceFromGDAX("ETH-EUR"))
     coins[2] = float(getPriceFromGDAX("LTC-EUR"))
+    coins[3] = float(getPriceFromGDAX("BCH-EUR"))
 
     for i in range(MAX_COINS):
         if coins[i] < min[i]:
@@ -37,7 +38,7 @@ while True:
             isMax = True
             maxIdx |= 1 << i
 
-    line = "BTC: " + parseFloat(coins[0]) + ", ETH: " + parseFloat(coins[1]) + ", LTC: " + parseFloat(coins[2])
+    line = "BTC: " + parseFloat(coins[0]) + ", ETH: " + parseFloat(coins[1]) + ", LTC: " + parseFloat(coins[2]) + ", BCH: " + parseFloat(coins[3])
     extra = ""
     print(line, end="")
     if isMax:
@@ -45,7 +46,7 @@ while True:
     if isMin:
         extra += " MIN " + str(minIdx)
     print(extra)
-    file.write(str(parseFloat(coins[0]) + " " + parseFloat(coins[1]) + " " + parseFloat(coins[2])) + "\n")
+    file.write(str(parseFloat(coins[0]) + " " + parseFloat(coins[1]) + " " + parseFloat(coins[2]) + " " + parseFloat(coins[3])) + "\n")
     file.close()
     time.sleep(5)
 

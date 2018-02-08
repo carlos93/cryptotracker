@@ -142,11 +142,13 @@ for j in range(1):
     btcPrices = []
     ethPrices = []
     ltcPrices = []
+    bchPrices = []
     for line in file:
-        btc, eth, ltc = line.split(" ")
+        btc, eth, ltc, bch = line.split(" ")
         btcPrices.append(float(btc))
         ethPrices.append(float(eth))
         ltcPrices.append(float(ltc))
+        bchPrices.append(float(bch))
 
     print("")
     print("##########")
@@ -163,12 +165,20 @@ for j in range(1):
     #print("Min val: " + parseFloat(minVal) + ", Max val: " + parseFloat(maxVal))
     #print("Efficience: " + parseFloat(money - initialMoney) + ", " + parseFloat(optimized - initialMoney) + ", " + parseFloat((money - initialMoney) * 100 / (optimized - initialMoney+0.1)) + "%")
 
-    plt.subplot(3,1,1)
+    fig_size = plt.rcParams["figure.figsize"]
+    fig_size[0] = 10
+    fig_size[1] = 10
+    plt.rcParams["figure.figsize"] = fig_size
+
+    plt.subplot(4,1,1)
     plt.plot(np.array(btcPrices), "y")
 
-    plt.subplot(3,1,2)
+    plt.subplot(4,1,2)
     plt.plot(np.array(ethPrices), "b")
 
-    plt.subplot(3,1,3)
+    plt.subplot(4,1,3)
     plt.plot(np.array(ltcPrices), "m")
+    
+    plt.subplot(4,1,4)
+    plt.plot(np.array(bchPrices), "g")
     plt.show()
