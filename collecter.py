@@ -1,5 +1,7 @@
 import time
 import requests
+import sys
+from multiprocessing import Pool, TimeoutError
 
 MAX_COINS = 4
 
@@ -13,41 +15,50 @@ def getPriceFromGDAX(coin):
     value = (float(json["bids"][0][0]) + float(json["asks"][0][0])) / 2.0
     return value
 
-min = [99999999, 99999999, 99999999, 99999999]
-max = [0, 0, 0, 0]
-while True:
-    isMin = False
-    isMax = False
-    minIdx = 0
-    maxIdx = 0
-    file = open("data.txt", "a")
-    coins = [0, 0, 0, 0]
-    coins[0] = float(getPriceFromGDAX("BTC-EUR"))
-    coins[1] = float(getPriceFromGDAX("ETH-EUR"))
-    coins[2] = float(getPriceFromGDAX("LTC-EUR"))
-    coins[3] = float(getPriceFromGDAX("BCH-EUR"))
+if __name__ == '__main__':
+    min = [99999999, 99999999, 99999999, 99999999]
+    max = [0, 0, 0, 0]
+    with Pool(processes=4) as pool:
+        while True:
+            try:
+                isMin = False
+                isMax = False
+                minIdx = 0
+                maxIdx = 0
+                file = open("data.txt", "a")
+                coins = [0, 0, 0, 0]
 
-    for i in range(MAX_COINS):
-        if coins[i] < min[i]:
-            min[i] = coins[i]
-            isMin = True
-            minIdx |= 1 << i
-            
-        if coins[i] > max[i]:
-            max[i] = coins[i]
-            isMax = True
-            maxIdx |= 1 << i
+                coins[0] = pool.apply_async(getPriceFromGDAX, ("BTC-EUR",)).get()
+                coins[1] = pool.apply_async(getPriceFromGDAX, ("ETH-EUR",)).get()
+                coins[2] = pool.apply_async(getPriceFromGDAX, ("LTC-EUR",)).get()
+                coins[3] = pool.apply_async(getPriceFromGDAX, ("BCH-EUR",)).get()
 
-    line = "BTC: " + parseFloat(coins[0]) + ", ETH: " + parseFloat(coins[1]) + ", LTC: " + parseFloat(coins[2]) + ", BCH: " + parseFloat(coins[3])
-    extra = ""
-    print(line, end="")
-    if isMax:
-        extra += " MAX " + str(maxIdx)
-    if isMin:
-        extra += " MIN " + str(minIdx)
-    print(extra)
-    file.write(str(parseFloat(coins[0]) + " " + parseFloat(coins[1]) + " " + parseFloat(coins[2]) + " " + parseFloat(coins[3])) + "\n")
-    file.close()
-    time.sleep(5)
+                for i in range(MAX_COINS):
+                    if coins[i] < min[i]:
+                        min[i] = coins[i]
+                        isMin = True
+                        minIdx |= 1 << i
+                        
+                    if coins[i] > max[i]:
+                        max[i] = coins[i]
+                        isMax = True
+                        maxIdx |= 1 << i
+
+                line = "BTC: " + parseFloat(coins[0]) + ", ETH: " + parseFloat(coins[1]) + ", LTC: " + parseFloat(coins[2]) + ", BCH: " + parseFloat(coins[3])
+                extra = ""
+                print(line, end="")
+                if isMax:
+                    extra += " MAX " + str(maxIdx)
+                if isMin:
+                    extra += " MIN " + str(minIdx)
+                print(extra)
+                file.write(str(parseFloat(coins[0]) + " " + parseFloat(coins[1]) + " " + parseFloat(coins[2]) + " " + parseFloat(coins[3])) + "\n")
+                file.close()
+                time.sleep(5)
+            except:
+                file = open("logs.txt", "a")
+                file.write("Unexpected error: " + sys.exc_info()[0])
+                file.close()
+                raise
 
 
