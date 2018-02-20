@@ -28,10 +28,10 @@ if __name__ == '__main__':
                 file = open("data.txt", "a")
                 coins = [0, 0, 0, 0]
 
-                coins[0] = pool.apply_async(getPriceFromGDAX, ("BTC-EUR",)).get()
-                coins[1] = pool.apply_async(getPriceFromGDAX, ("ETH-EUR",)).get()
-                coins[2] = pool.apply_async(getPriceFromGDAX, ("LTC-EUR",)).get()
-                coins[3] = pool.apply_async(getPriceFromGDAX, ("BCH-EUR",)).get()
+                coins[0] = pool.apply_async(getPriceFromGDAX, ("BTC-EUR",)).get(timeout=4)
+                coins[1] = pool.apply_async(getPriceFromGDAX, ("ETH-EUR",)).get(timeout=4)
+                coins[2] = pool.apply_async(getPriceFromGDAX, ("LTC-EUR",)).get(timeout=4)
+                coins[3] = pool.apply_async(getPriceFromGDAX, ("BCH-EUR",)).get(timeout=4)
 
                 for i in range(MAX_COINS):
                     if coins[i] < min[i]:
