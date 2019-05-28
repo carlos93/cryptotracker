@@ -2,10 +2,21 @@ import time
 import requests
 import sys
 import json
+from datetime import datetime
+from colorama import Fore, Back, Style, init
 
 coinNames = ["BTC-EUR", "ETH-EUR", "LTC-EUR", "BCH-EUR"]
 
 MAX_COINS = 4
+
+def loadCurrencies():
+    with open("currencies.txt") as file:
+        line = file.readline().strip()
+        currencies = list(map(float, line.split(" ")))
+        file.close()
+        return currencies
+
+    return [0, 0, 0, 0]
 
 def parseFloat(num):
     return "{0:.4f}".format(num)
@@ -36,8 +47,23 @@ def fillPcts(coins, stats, pct):
     for i in range(MAX_COINS):
         pct.append(coins[i] / float(stats[i]["open"]))
 
+def printStyle(pct):
+    temp = ""
+    if pct > 0.0:
+        temp += Fore.GREEN + parseFloat(pct)
+    elif pct < 0.0:
+        temp += Fore.RED + parseFloat(pct)
+    else:
+        temp += parseFloat(pct)
+
+    temp += "%" + Fore.WHITE
+    return temp
+
 min = [99999999, 99999999, 99999999, 99999999]
 max = [0, 0, 0, 0]
+currencies = loadCurrencies()
+init()
+firstIter = True
 while True:
     try:
         isMin = False
@@ -65,17 +91,34 @@ while True:
                 isMax = True
                 maxIdx |= 1 << i
 
-        line = "BTC: " + parseFloat(coins[0]) + " (" + parsePct(pct[0])  + "%), ETH: " + parseFloat(coins[1]) + " (" + parsePct(pct[1])  + "%), LTC: " + parseFloat(coins[2]) + " (" + parsePct(pct[2])  + "%), BCH: " + parseFloat(coins[3]) + "(" + parsePct(pct[3])  + "%)"
+        line = ""
+        total = 0.0
+        for i in range(MAX_COINS):
+            total += coins[i] * currencies[i]
+
+        line += Fore.WHITE + datetime.now().strftime('%d-%m-%Y %H:%M:%S') + "\nTotal: " + parseFloat(total) + "€\n "
+        for i in range(MAX_COINS):
+            line += coinNames[i] + ": " + parseFloat(coins[i]) + " => " + parseFloat(coins[i] * currencies[i]) + "€ (" + printStyle(pct[i] * 100 - 100) + ")"
+            
+            if firstIter == False:
+                if maxIdx & i+1:
+                    line += " MAX"
+                if minIdx & i+1:
+                    line += " MIN"
+
+            line += "\n "
+        firstIter = False
+        #line = "BTC: " + parseFloat(coins[0]) + " => " + parseFloat(coins[0] * currencies[0]) + " (" + parsePct(pct[0])  + "%), ETH: " + parseFloat(coins[1])  + " (" + parsePct(pct[1])  + "%), LTC: " + parseFloat(coins[2]) + " (" + parsePct(pct[2])  + "%), BCH: " + parseFloat(coins[3]) + "(" + parsePct(pct[3])  + "%)"
         extra = ""
-        print(line, end="")
-        if isMax:
-            extra += " MAX " + str(maxIdx)
-        if isMin:
-            extra += " MIN " + str(minIdx)
-        print(extra)
+        print(line + Fore.WHITE, end="")
+        #if isMax:
+        #    extra += " MAX " + str(maxIdx)
+        #if isMin:
+        #    extra += " MIN " + str(minIdx)
+        #print(Fore.WHITE + extra)
         file.write(str(parseFloat(coins[0]) + " " + parseFloat(coins[1]) + " " + parseFloat(coins[2]) + " " + parseFloat(coins[3])) + "\n")
         file.close()
-        time.sleep(5)
+        time.sleep(30)
     except json.JSONDecodeError as error:
         file = open("logs.txt", "a")
         file.write("JSONDecodeError error: " + error.msg + "\n" + error.doc + " AT POS: " + error.pos + ":" + ":" + "\n")
