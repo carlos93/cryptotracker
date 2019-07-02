@@ -5,9 +5,11 @@ import json
 from datetime import datetime
 from colorama import Fore, Back, Style, init
 
-coinNames = ["BTC-EUR", "ETH-EUR", "LTC-EUR", "BCH-EUR"]
+coinNames = ["BTC-EUR", "ETH-EUR", "LTC-EUR", "BCH-EUR", "LINK-USD"]
 
-MAX_COINS = 4
+USDTOEUR = 0.89
+
+MAX_COINS = len(coinNames)
 
 def loadCurrencies():
     with open("currencies.txt") as file:
@@ -28,6 +30,8 @@ def getPriceFromGDAX(coin):
     r = requests.get("https://api.gdax.com/products/"+coin+"/book?level=1", headers={"user-agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36"})
     json = r.json()
     value = (float(json["bids"][0][0]) + float(json["asks"][0][0])) / 2.0
+    if coin.split("-")[1] == "USD":
+        value *= USDTOEUR
     return value
 
 def getStatsFromGDAX(coin):
@@ -59,8 +63,12 @@ def printStyle(pct):
     temp += "%" + Fore.WHITE
     return temp
 
-min = [99999999, 99999999, 99999999, 99999999]
-max = [0, 0, 0, 0]
+min = []
+max = []
+for _ in enumerate(coinNames):
+    min.append(99999999)
+    max.append(0)
+
 currencies = loadCurrencies()
 init()
 firstIter = True
@@ -98,6 +106,9 @@ while True:
 
         line += Fore.WHITE + datetime.now().strftime('%d-%m-%Y %H:%M:%S') + "\nTotal: " + parseFloat(total) + "€\n "
         for i in range(MAX_COINS):
+            if currencies[i] == 0.0:
+                continue
+
             line += coinNames[i] + ": " + parseFloat(coins[i]) + " => " + parseFloat(coins[i] * currencies[i]) + "€ (" + printStyle(pct[i] * 100 - 100) + ")"
             
             if firstIter == False:
@@ -116,7 +127,13 @@ while True:
         #if isMin:
         #    extra += " MIN " + str(minIdx)
         #print(Fore.WHITE + extra)
-        file.write(str(parseFloat(coins[0]) + " " + parseFloat(coins[1]) + " " + parseFloat(coins[2]) + " " + parseFloat(coins[3])) + "\n")
+        outputLine = ""
+        for idx, name in enumerate(coinNames):
+            outputLine += str(parseFloat(coins[idx]))
+            if idx != len(coinNames) - 1:
+                outputLine += " "
+        outputLine += "\n"
+        file.write(outputLine)
         file.close()
         time.sleep(30)
     except json.JSONDecodeError as error:
@@ -127,6 +144,5 @@ while True:
         file = open("logs.txt", "a")
         file.write("Unexpected error: " + str(sys.exc_info()[0]) + "\n")
         file.close()
-        raise
 
 
